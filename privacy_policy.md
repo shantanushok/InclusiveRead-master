@@ -15,7 +15,7 @@ Your OpenRouter API key is stored using `chrome.storage.local`, which means:
 - ✅ **No transmission** - never leaves your device
 - ✅ **Private** - not accessible by other extensions or websites
 - ✅ **Secure** - uses Chrome's encrypted storage
-
+ 
 **Technical Implementation:**
 ```javascript
 // API keys are saved to local storage only
