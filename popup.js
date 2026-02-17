@@ -372,6 +372,19 @@ async function sendMessageToActiveTab(message) {
       return;
     }
 
+    // For PDF pages, ensure pdf-content.js is injected first
+    const isPdf = tab.url.toLowerCase().endsWith('.pdf') || tab.url.toLowerCase().includes('.pdf?');
+    if (isPdf) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['pdf-content.js']
+        });
+      } catch (e) {
+        // Already injected, ignore
+      }
+    }
+
     try {
       await chrome.tabs.sendMessage(tab.id, message);
     } catch (error) {

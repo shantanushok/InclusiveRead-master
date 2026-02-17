@@ -78,6 +78,33 @@ async function simplifyTextHandler(text, apiKey, abortSignal) {
     }
 }
 
+// Listen for tab updates to detect PDF pages and inject scripts
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab.url) {
+        const url = tab.url.toLowerCase();
+        if (url.endsWith('.pdf') || url.includes('.pdf?')) {
+            // Inject PDF content script if not already loaded
+            chrome.scripting.executeScript({
+                target: { tabId: tabId },
+                files: ['pdf-content.js']
+            }).then(() => {
+                // Also inject the main content scripts so InclusiveRead features work on the extracted text
+                return chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    files: ['dom-utils.js', 'content.js']
+                });
+            }).then(() => {
+                return chrome.scripting.insertCSS({
+                    target: { tabId: tabId },
+                    files: ['content.css', 'pdf-content.css']
+                });
+            }).catch(err => {
+                console.log('InclusiveRead: Could not inject into PDF tab:', err.message);
+            });
+        }
+    }
+});
+
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
