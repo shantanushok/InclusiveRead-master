@@ -1,0 +1,292 @@
+/* InclusiveRead PDF Viewer Styles */
+
+/* Loading Screen */
+#ir-pdf-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ir-pdf-loader-content {
+    text-align: center;
+    color: #fafafa;
+}
+
+.ir-pdf-loader-content h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    background: linear-gradient(135deg, #818cf8, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ir-pdf-loader-content p {
+    font-size: 14px;
+    color: #a1a1a1;
+    margin: 0;
+}
+
+.ir-pdf-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(129, 140, 248, 0.2);
+    border-top-color: #818cf8;
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: ir-pdf-spin 0.8s linear infinite;
+}
+
+@keyframes ir-pdf-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error Screen */
+#ir-pdf-error {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999998;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ir-pdf-error-content {
+    text-align: center;
+    color: #fafafa;
+    max-width: 400px;
+    padding: 32px;
+}
+
+.ir-pdf-error-content svg {
+    color: #f87171;
+    margin-bottom: 16px;
+}
+
+.ir-pdf-error-content h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+.ir-pdf-error-content p {
+    font-size: 14px;
+    color: #a1a1a1;
+    margin: 0 0 8px;
+    line-height: 1.6;
+}
+
+.ir-pdf-error-hint {
+    font-size: 12px !important;
+    color: #737373 !important;
+    margin-top: 16px !important;
+}
+
+/* PDF Viewer Container */
+#ir-pdf-viewer {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    background: #0f0f0f;
+    color: #e5e5e5;
+    min-height: 100vh;
+    line-height: 1.7;
+    font-size: 16px;
+}
+
+/* Header Bar */
+.ir-pdf-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ir-pdf-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ir-pdf-header-left svg {
+    color: #818cf8;
+    flex-shrink: 0;
+}
+
+.ir-pdf-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fafafa;
+}
+
+.ir-pdf-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #818cf8;
+    background: rgba(129, 140, 248, 0.12);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.ir-pdf-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ir-pdf-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #d4d4d4;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.ir-pdf-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fafafa;
+}
+
+/* Content Area */
+.ir-pdf-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+}
+
+/* Page */
+.ir-pdf-page {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.ir-pdf-page:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ir-pdf-page-header {
+    font-size: 12px;
+    font-weight: 500;
+    color: #737373;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ir-pdf-page-body {
+    padding: 24px;
+}
+
+.ir-pdf-paragraph {
+    margin: 0 0 16px;
+    color: #d4d4d4;
+    line-height: 1.8;
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.ir-pdf-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+.ir-pdf-empty {
+    color: #525252;
+    font-style: italic;
+    font-size: 14px;
+    text-align: center;
+    padding: 24px 0;
+}
+
+/* Selection styles for InclusiveRead features */
+#ir-pdf-viewer ::selection {
+    background: rgba(129, 140, 248, 0.3);
+    color: #fafafa;
+}
+
+/* Scroll to top indicator */
+#ir-pdf-viewer .ir-pdf-page:first-child {
+    scroll-margin-top: 60px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ir-pdf-header {
+        padding: 10px 16px;
+    }
+
+    .ir-pdf-content {
+        padding: 16px 12px 60px;
+    }
+
+    .ir-pdf-page-body {
+        padding: 16px;
+    }
+
+    .ir-pdf-paragraph {
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .ir-pdf-title {
+        font-size: 13px;
+    }
+
+    .ir-pdf-toggle-btn span {
+        display: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .ir-pdf-header {
+        display: none;
+    }
+
+    #ir-pdf-viewer {
+        background: white;
+        color: black;
+    }
+
+    .ir-pdf-page {
+        border: 1px solid #ccc;
+        break-inside: avoid;
+    }
+
+    .ir-pdf-paragraph {
+        color: black;
+    }
+}

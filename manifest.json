@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -27,6 +28,23 @@
         "content.css"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "include_globs": [
+        "*://*/*.pdf",
+        "*://*/*.pdf?*",
+        "file:///*.pdf"
+      ],
+      "js": [
+        "pdf-content.js"
+      ],
+      "css": [
+        "pdf-content.css"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "action": {
@@ -45,7 +63,9 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "content.css"
+        "content.css",
+        "pdf-content.css",
+        "pdf-content.js"
       ],
       "matches": [
         "<all_urls>"
