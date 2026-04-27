@@ -3,6 +3,33 @@
 const OPENROUTER_API_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent';
 const OPENROUTER_MODEL = 'google/gemma-3-27b-it:free';
+const API_TIMEOUT_MS = 30000;
+
+/**
+ * fetch() with an automatic timeout.
+ * @param {string} url
+ * @param {RequestInit} options
+ * @param {number} timeoutMs  - default API_TIMEOUT_MS (30 seconds)
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timerId);
+        return response;
+    } catch (err) {
+        clearTimeout(timerId);
+        if (err.name === 'AbortError') {
+            throw new Error(`Request timed out after ${timeoutMs / 1000}s`);
+        }
+        throw err;
+    }
+}
 
 /**
  * Get current API provider and key from storage
@@ -46,8 +73,13 @@ async function callAPI(messages, apiKeyOverride = null) {
  * Helper to call OpenRouter API
  */
 async function callOpenRouter(messages, apiKey) {
+    if (rateLimitManager.isBlocked('openrouter')) {
+        const secs = rateLimitManager.secondsRemaining('openrouter');
+        throw new Error(`Rate limited. Please wait ${secs}s before trying again.`);
+    }
+
     try {
-        const response = await fetch(OPENROUTER_API_ENDPOINT, {
+        const response = await fetchWithTimeout(OPENROUTER_API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -62,20 +94,27 @@ async function callOpenRouter(messages, apiKey) {
         });
 
         if (!response.ok) {
+            if (response.status === 429) {
+                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                rateLimitManager.markLimited('openrouter', retryAfter);
+                throw new Error(`Rate limited. Please wait ${retryAfter}s before trying again.`);
+            }
             const errorData = await response.json().catch(() => ({}));
-            console.error('OpenRouter API error:', JSON.stringify(errorData));
             // Handle various error response formats
             const errorMsg = errorData.error?.message
                 || errorData.message
                 || (typeof errorData.error === 'string' ? errorData.error : null)
                 || `HTTP ${response.status}: ${response.statusText}`;
+            errorTracker.record('callOpenRouter', errorMsg, { status: response.status });
             throw new Error(errorMsg);
         }
 
         const data = await response.json();
         return data.choices?.[0]?.message?.content || '';
     } catch (error) {
-        console.error('OpenRouter API error:', error.message || error);
+        if (!error.message?.includes('Rate limited') && !error.message?.includes('timed out')) {
+            errorTracker.record('callOpenRouter', error, { provider: 'openrouter' });
+        }
         throw error;
     }
 }
@@ -84,6 +123,11 @@ async function callOpenRouter(messages, apiKey) {
  * Helper to call Google Gemini API
  */
 async function callGemini(messages, apiKey) {
+    if (rateLimitManager.isBlocked('gemini')) {
+        const secs = rateLimitManager.secondsRemaining('gemini');
+        throw new Error(`Rate limited. Please wait ${secs}s before trying again.`);
+    }
+
     try {
         // Convert OpenAI-style messages to Gemini format
         const contents = messages.map(msg => ({
@@ -91,10 +135,12 @@ async function callGemini(messages, apiKey) {
             parts: [{ text: msg.content }]
         }));
 
-        const response = await fetch(`${GEMINI_API_ENDPOINT}?key=${apiKey}`, {
+        // API key is sent via header (not URL) to avoid exposure in logs/history
+        const response = await fetchWithTimeout(GEMINI_API_ENDPOINT, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey
             },
             body: JSON.stringify({
                 contents: contents,
@@ -106,20 +152,27 @@ async function callGemini(messages, apiKey) {
         });
 
         if (!response.ok) {
+            if (response.status === 429) {
+                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                rateLimitManager.markLimited('gemini', retryAfter);
+                throw new Error(`Rate limited. Please wait ${retryAfter}s before trying again.`);
+            }
             const errorData = await response.json().catch(() => ({}));
-            console.error('Gemini API error:', JSON.stringify(errorData));
             // Handle various error response formats
             const errorMsg = errorData.error?.message
                 || errorData.message
                 || (typeof errorData.error === 'string' ? errorData.error : null)
                 || `HTTP ${response.status}: ${response.statusText}`;
+            errorTracker.record('callGemini', errorMsg, { status: response.status });
             throw new Error(errorMsg);
         }
 
         const data = await response.json();
         return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     } catch (error) {
-        console.error('Gemini API error:', error.message || error);
+        if (!error.message?.includes('Rate limited') && !error.message?.includes('timed out')) {
+            errorTracker.record('callGemini', error, { provider: 'gemini' });
+        }
         throw error;
     }
 }
@@ -191,28 +244,17 @@ Return up to 15 terms, sorted by importance. If no complex terms found, return e
             return [];
         }
 
-        let result = JSON.parse(jsonMatch[0]);
+        let parsed;
+        try {
+            parsed = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+            errorTracker.record('detectJargon', parseError, { stage: 'JSON.parse' });
+            return [];
+        }
 
-        // Validate and clean results
-        result = result.filter(item =>
-            item.jargon &&
-            item.simple &&
-            item.jargon.length >= 3 &&
-            item.jargon.length <= 50
-        ).map(item => ({
-            jargon: item.jargon.trim(),
-            simple: item.simple.trim(),
-            explanation: (item.explanation || '').trim(),
-            category: item.category || 'general',
-            difficulty: Math.min(3, Math.max(1, item.difficulty || 2))
-        }));
-
-        // Sort by difficulty (most complex first)
-        result.sort((a, b) => b.difficulty - a.difficulty);
-
-        return result;
+        return ResponseValidator.validateJargonList(parsed);
     } catch (error) {
-        console.error('Jargon detection failed:', error);
+        errorTracker.record('detectJargon', error, { provider: (await getApiConfig().catch(() => ({}))).provider });
         return [];
     }
 }
@@ -264,19 +306,17 @@ RESPOND with valid JSON only (no markdown):
             return null;
         }
 
-        const result = JSON.parse(jsonMatch[0]);
-
-        if (!result.simplified) {
+        let parsed;
+        try {
+            parsed = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+            errorTracker.record('simplifyText', parseError, { stage: 'JSON.parse' });
             return null;
         }
 
-        return {
-            simplified: result.simplified.trim(),
-            readingLevel: result.readingLevel || 'Unknown',
-            keyChanges: result.keyChanges || []
-        };
+        return ResponseValidator.validateSimplifiedText(parsed);
     } catch (error) {
-        console.error('Text simplification failed:', error);
+        errorTracker.record('simplifyText', error, { provider: (await getApiConfig().catch(() => ({}))).provider });
         return null;
     }
 }

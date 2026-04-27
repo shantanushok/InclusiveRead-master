@@ -997,11 +997,12 @@ function applyJargonToSelection(jargonList, range) {
             if (!parent) return;
 
             const html = textNode.textContent.replace(regex, (match) => {
+                const safeMatch = escapeHtml(match);
                 return `<span class="ir-jargon ir-jargon-selection ir-jargon-${safeCategory} ir-difficulty-${difficulty || 2}" 
                               data-simple="${safeSimple}" 
                               data-explanation="${safeExplanation}"
                               data-category="${safeCategory}"
-                              data-original="${escapeHtml(match)}">${match}</span>`;
+                              data-original="${safeMatch}">${safeMatch}</span>`;
             });
 
             const wrapper = document.createElement('span');
@@ -1854,11 +1855,12 @@ function applyJargonReplacement({ jargon, simple, explanation, category, difficu
         if (!parent) return;
 
         const html = textNode.textContent.replace(regex, (match) => {
+            const safeMatch = escapeHtml(match);
             return `<span class="ir-jargon ir-jargon-${safeCategory} ir-difficulty-${difficulty}" 
                           data-simple="${safeSimple}" 
                           data-explanation="${safeExplanation}"
                           data-category="${safeCategory}"
-                          data-original="${escapeHtml(match)}">${match}</span>`;
+                          data-original="${safeMatch}">${safeMatch}</span>`;
         });
 
         const wrapper = document.createElement('span');
@@ -3809,10 +3811,17 @@ function showNotification(message, type = 'info') {
 
     const notification = document.createElement('div');
     notification.className = 'ir-notification';
-    notification.innerHTML = `
-        <div class="ir-notification-icon">${icons[type] || icons.info}</div>
-        <span class="ir-notification-text">${message}</span>
-    `;
+
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'ir-notification-icon';
+    iconDiv.innerHTML = icons[type] || icons.info;
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'ir-notification-text';
+    textSpan.textContent = message;
+
+    notification.appendChild(iconDiv);
+    notification.appendChild(textSpan);
 
     const styles = `
         .ir-notification {
@@ -3903,15 +3912,6 @@ function removeCSS(id) {
     if (existingStyle) {
         existingStyle.remove();
     }
-}
-
-/**
- * Utility: Escape HTML
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 /**

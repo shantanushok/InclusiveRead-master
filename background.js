@@ -1,6 +1,9 @@
 // Background Service Worker - Handles API calls and message routing
 
-// Import Gemini service (note: in Manifest V3, we use importScripts)
+// Import utility modules (note: in Manifest V3, we use importScripts)
+importScripts('error-tracker.js');
+importScripts('rate-limit-manager.js');
+importScripts('response-validator.js');
 importScripts('gemini-service.js');
 
 // Listen for messages from popup and content scripts
