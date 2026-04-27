@@ -8,12 +8,14 @@ class RateLimitManager {
 
     /** Mark a provider as rate-limited for `retryAfterSeconds`. */
     markLimited(provider, retryAfterSeconds = 60) {
+        // Clamp to reasonable bounds to prevent malicious/misconfigured server values
+        const clampedSeconds = Math.min(Math.max(1, retryAfterSeconds), 3600);
         this.state[provider] = {
             blocked: true,
-            unblockAt: Date.now() + retryAfterSeconds * 1000,
+            unblockAt: Date.now() + clampedSeconds * 1000,
             retryCount: (this.state[provider]?.retryCount || 0) + 1
         };
-        console.warn(`[InclusiveRead] ${provider} rate-limited for ${retryAfterSeconds}s`);
+        console.warn(`[InclusiveRead] ${provider} rate-limited for ${clampedSeconds}s`);
     }
 
     /** Check if provider is currently blocked. */

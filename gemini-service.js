@@ -95,7 +95,9 @@ async function callOpenRouter(messages, apiKey) {
 
         if (!response.ok) {
             if (response.status === 429) {
-                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                const rawRetryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                // Clamp to reasonable bounds (1s–3600s) to avoid malicious/misconfigured servers
+                const retryAfter = Math.min(Math.max(1, rawRetryAfter), 3600);
                 rateLimitManager.markLimited('openrouter', retryAfter);
                 throw new Error(`Rate limited. Please wait ${retryAfter}s before trying again.`);
             }
@@ -153,7 +155,9 @@ async function callGemini(messages, apiKey) {
 
         if (!response.ok) {
             if (response.status === 429) {
-                const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                const rawRetryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
+                // Clamp to reasonable bounds (1s–3600s) to avoid malicious/misconfigured servers
+                const retryAfter = Math.min(Math.max(1, rawRetryAfter), 3600);
                 rateLimitManager.markLimited('gemini', retryAfter);
                 throw new Error(`Rate limited. Please wait ${retryAfter}s before trying again.`);
             }

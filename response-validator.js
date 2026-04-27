@@ -39,11 +39,14 @@ class ResponseValidator {
         };
     }
 
-    /** Clamp a string to maxLen and strip HTML/script tags. */
+    /** Clamp a string to maxLen and strip HTML tags (including malformed/unclosed ones). */
     static _safeStr(val, maxLen) {
         if (typeof val !== 'string') return '';
+        // Remove all angle brackets to prevent HTML injection.
+        // This handles both complete tags and malformed/unclosed tags like <script src=x.
+        // Validated data is further protected by escapeHtml() at DOM insertion points.
         return val
-            .replace(/<[^>]*>/g, '')   // strip any HTML tags
+            .replace(/[<>]/g, '')
             .trim()
             .slice(0, maxLen);
     }

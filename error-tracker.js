@@ -25,7 +25,9 @@ class APIErrorTracker {
         }
         console.error(`[InclusiveRead] ${source}:`, entry.message, meta);
         // Persist last error to storage for popup diagnostics
-        chrome.storage.local.set({ lastError: entry }).catch(() => {});
+        chrome.storage.local.set({ lastError: entry }).catch((err) => {
+            console.warn('[InclusiveRead] Failed to persist error to storage:', err);
+        });
     }
 
     /** Return last N errors. */
@@ -36,7 +38,9 @@ class APIErrorTracker {
     /** Clear all tracked errors. */
     clear() {
         this.errors = [];
-        chrome.storage.local.remove('lastError').catch(() => {});
+        chrome.storage.local.remove('lastError').catch((err) => {
+            console.warn('[InclusiveRead] Failed to clear error from storage:', err);
+        });
     }
 }
 
